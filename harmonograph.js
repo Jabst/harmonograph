@@ -1,6 +1,80 @@
 'use strict';
 
+fetch('data.csv')
+  .then(response => response.text())
+  .then(text => parseText(text))
+
+const weathers = [];
+
 var d, c, p, q, r, A, B, u, v, R, S, f, g, h, s, w;
+
+function toRadians(degrees) {
+	return degrees / 180.0 * Math.PI;
+}
+
+
+class Weather {
+	date;
+	cloudCover;
+	sunshine;
+	globalRadiation;
+	maxTemperature;
+	meanTemperature;
+	minTemperature;
+	precipitation;
+	pressure;
+
+	constructor(date, cloudCover, sunshine, globalRadiation, maxTemperature, meanTemperature, minTemperature, precipitation, pressure){
+		this.date = date;
+		this.cloudCover = cloudCover;
+		this.sunshine = sunshine;
+		this.globalRadiation = globalRadiation;
+		this.maxTemperature = maxTemperature;
+		this.meanTemperature = meanTemperature;
+		this.minTemperature = minTemperature;
+		this.precipitation = precipitation;
+		this.pressure = pressure;
+
+	}
+
+}
+
+function parseText(text) {
+	let lines = text.split('\r\n');
+	let str = '';
+	for(let i = 1 ; i < lines.length ; i++) {
+		let elements = lines[i].split(',');
+		let weather = new Weather(elements[0], elements[1], elements[2], elements[3], elements[4],
+			elements[5], elements[6], elements[7], elements[8]);
+		
+		str += `<option value="${elements[0]}">${elements[0]}</option>`
+		weathers.push(weather);
+
+
+	}
+
+	$("#days").html(str);
+
+	$('#days').on('change', function() {
+		for (let i = 0; i < weathers.length; i++) {
+			if (this.value == weathers[i].date) {
+				A = toRadians(parseFloat(weathers[i].maxTemperature));
+				B = toRadians(parseFloat(weathers[i].minTemperature));
+				u = parseFloat("0." + weathers[i].globalRadiation);
+				v = parseFloat("0." + weathers[i].pressure);
+				R = parseFloat("0.00" + weathers[i].cloudCover);
+				S = parseFloat(weathers[i].sunshine) * 0.001;
+				q = parseFloat(700 + parseInt(weathers[i].precipitation));
+			}
+		}
+
+		console.log("A, B, u, v, R, S, q");
+		console.log(A, B, u, v, R, S, q);
+		start();
+	});
+}
+
+
 
 var t = 0.0, dt = 0.01;
 var x, y;
@@ -293,10 +367,6 @@ function read(id) {
 		input.className = '';
 	}
 	return f;
-}
-
-function toRadians(degrees) {
-	return degrees / 180.0 * Math.PI;
 }
 
 function readInput() {
