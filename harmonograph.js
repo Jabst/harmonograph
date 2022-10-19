@@ -319,7 +319,7 @@ function step() {
 		newXs.push(x);
 		newYs.push(y);
 	}
-	
+
 	output.draw(newXs, newYs);
 	drawOverview(false);
 }
@@ -345,6 +345,7 @@ function enableInput(enabled) {
 }
 
 function updateXY() {
+
 	alpha = A * Math.sin(2.0 * Math.PI * (f * t + u)) * Math.exp(-R * t);
 	beta  = B * Math.sin(2.0 * Math.PI * (g * t + v)) * Math.exp(-S * t);
 	gamma = 2.0 * Math.PI * h * t;

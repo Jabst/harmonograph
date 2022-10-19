@@ -1,7 +1,7 @@
 body {
 	margin: 0px;
 	font-family: sans-serif;
-	background-color: #ffe;
+	background-color: rgb(218, 218, 218);
 }
 
 th {
@@ -16,7 +16,7 @@ td.main {
 h1 {
 	margin: 0em 0em;
 	padding: 0.2em;
-	background-color: #ffc;
+	background-color: rgb(87, 187, 108);
 }
 
 .right {
