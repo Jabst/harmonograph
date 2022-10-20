@@ -28,7 +28,7 @@ class CanvasRenderer{
         context.lineJoin = 'round';
         
         if (this.r) {
-            var scale = Math.min(width * 0.9 / 2.0 / this.r, height * 0.9 / 2.0 / this.r);
+            var scale = Math.min(width * 0.98 / 2.0 / this.r, height * 0.98 / 2.0 / this.r);
             context.setTransform(scale, 0, 0, scale, width / 2.0, height / 2.0);
             
             if (this.drawCircle) {

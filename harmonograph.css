@@ -1,8 +1,9 @@
 body {
 	margin: 0px;
-	font-family: 'Courier Prime';
+	font-family: 'Courier';
 	background-color: #FFFBEC;
 	color: #0500FF;
+	font-size: 18px;
 }
 
 th {
@@ -101,14 +102,19 @@ button#reset {
 	box-sizing: border-box;
 
 	border: 1.5px solid #0500FF;
-	border-radius: 15px;
+	border-radius: 11px;
 
 	background-color: transparent;
 
-	padding-left: 8em;
-    padding-right: 8em;
+	padding-left: 4em;
+    padding-right: 4em;
 
 	color: #0500FF;
+
+	cursor: pointer;
+
+	width: 254px;
+
 }
 
 .custom-btn:hover {
@@ -121,6 +127,8 @@ button#reset {
 	justify-content: center;
 	align-items: center;
 	margin-bottom: 27px;
+
+	
 }
 
 .input-days {
@@ -143,12 +151,17 @@ input[type="text"], textarea {
 ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
 	color: #f5f5f5;
 	opacity: 1; /* Firefox */
+	font-weight: bold;
 }
 
 ::-webkit-input-placeholder {
-text-align: center;
+	text-align: center;
 }
 
 :-moz-placeholder {
-text-align: center;
+	text-align: center;
+}
+
+.title-of-charts {
+	margin-bottom: 0;
 }
