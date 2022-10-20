@@ -1,15 +1,158 @@
-'use strict';
-
-fetch('data.csv')
-  .then(response => response.text())
-  .then(text => parseText(text))
-
-const weathers = [];
-
-var d, c, p, q, r, A, B, u, v, R, S, f, g, h, s, w;
-
 function toRadians(degrees) {
 	return degrees / 180.0 * Math.PI;
+}
+
+const newlineSeprator = navigator.platform == "Win32" ? '\r\n' : '\n';
+
+class CanvasRenderer{
+    constructor(canvas, drawCircle){
+        this.canvas = canvas;
+        this.context = canvas.getContext('2d');
+        this.drawCircle = drawCircle;
+
+        this.r = 300;
+        this.w = 1;
+        this.clear();
+    }
+
+    clear() {
+        var context = this.context;
+        var width = this.canvas.width;
+        var height = this.canvas.height;
+    
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.clearRect(0, 0, width, height);
+        context.strokeStyle = '#0500FF';
+        context.lineWidth = this.w;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        
+        if (this.r) {
+            var scale = Math.min(width * 0.9 / 2.0 / this.r, height * 0.9 / 2.0 / this.r);
+            context.setTransform(scale, 0, 0, scale, width / 2.0, height / 2.0);
+            
+            if (this.drawCircle) {
+                context.save();
+                context.beginPath();
+                context.arc(0, 0, this.r, 0, 2.0 * Math.PI, false);
+                
+                context.lineWidth = 2;
+                context.stroke();
+                context.lineWidth = this.w;
+                context.restore();
+            }
+        }
+    }
+
+    draw(xs, ys){
+        var context = this.context;
+        context.beginPath();
+        context.moveTo(xs[0], ys[0]);
+        var n = xs.length;
+        for (var i = 1; i < n; i++) {
+            context.lineTo(xs[i], ys[i]);
+        }
+        context.stroke();
+    }
+
+    save() {
+        this.canvas.toBlob(function(blob) {
+            saveAs(blob, 'harmonograph.png');
+        }, 'image/png');
+    }
+}
+
+class Harmonograph {
+    constructor(d,c,p,q,A,B,u,v,R,S,f,g,h,s) {
+        this.distanceBetweenPendulums = d || 900;
+        this.centrePosition = c || 700;
+        this.penArmLength = p || 900;
+        this.penArmPosition = q || 700;
+        this.leftPendulumAmplitude = toRadians(A || 10);
+        this.rightPendulumAmplitude = toRadians(B || 10);
+        this.leftPendulumPhase = u || 0;
+        this.rightPendulumPhase = v || 0;
+        this.leftPendulumDamping = R || 0.001;
+        this.rightPendulumDamping = S || 0.001;
+        this.leftPendulumFrequency = f || 0.3;
+        this.rightPendulumFrequency = g || 0.302;
+        this.paperRotationFrequency = h || 0.0008;
+        this.speedUpFactor = s || 10;
+
+        this.t = 0.0;
+        this.dt = 0.1;
+
+        this.intervalId;
+
+        this.xs = [];
+        this.ys = [];
+
+        this.self = this;
+
+        this.dx = new Date();
+
+        this.intervalId = null;
+    }
+
+    setCanvas(id) {
+        this.output = new CanvasRenderer(document.getElementById(id), true);
+    }
+
+    step() {
+        var newXs = [this.xs[this.xs.length - 1]];
+        var newYs = [this.ys[this.ys.length - 1]];
+        for (var i = 0; i < this.speedUpFactor; ++i) {
+            this.t += this.dt;
+            let coordinates = this.getCoordinates();
+            this.xs.push(coordinates.x);
+            this.ys.push(coordinates.y);
+            newXs.push(coordinates.x);
+            newYs.push(coordinates.y);
+        }
+
+        this.output.draw(newXs, newYs);
+
+        if (this.t >= 300) {
+            this.stop();
+        }
+    }
+
+    getCoordinates() {
+
+        let alpha = this.leftPendulumAmplitude * Math.sin(2.0 * Math.PI * (this.leftPendulumFrequency * this.t + this.leftPendulumPhase)) * Math.exp(-this.leftPendulumDamping * this.t);
+        let beta  = this.rightPendulumAmplitude * Math.sin(2.0 * Math.PI * (this.rightPendulumFrequency * this.t + this.rightPendulumPhase)) * Math.exp(-this.rightPendulumDamping * this.t);
+        let gamma = 2.0 * Math.PI * this.paperRotationFrequency * this.t;
+        
+        var xa = this.penArmLength * Math.cos(alpha) + this.penArmPosition * Math.sin(alpha) - this.distanceBetweenPendulums;
+        var ya = this.penArmPosition * Math.cos(alpha) - this.penArmLength * Math.sin(alpha);
+        var xb = xa * Math.cos(beta) - ya * Math.sin(beta);
+        var yb = ya * Math.cos(beta) + xa * Math.sin(beta) - this.centrePosition;
+        let x = xb * Math.cos(gamma) - yb * Math.sin(gamma);
+        let y = yb * Math.cos(gamma) + xb * Math.sin(gamma);
+    
+        return {
+            x: x,
+            y: y
+        }
+    }
+
+    start() {
+        this.intervalId = window.setInterval(() => {this.step()}, 1000 * this.dt);
+    }
+
+    stop() {
+        window.clearInterval(intervalId);
+		this.intervalId = null;
+    }
+
+    drawControl() {
+        if (this.intervalId == null) {
+            this.intervalId = window.setInterval(() => {this.step()}, 1000 * this.dt);
+        } else {
+            window.clearInterval(this.intervalId);
+		    this.intervalId = null;
+        }
+    }
 }
 
 
@@ -35,515 +178,94 @@ class Weather {
 		this.precipitation = precipitation;
 		this.pressure = pressure;
 
+        this.temperatureHarmonograph = new Harmonograph(null, null, null, null, 
+                                                        this.maxTemperature, this.minTemperature, null, null, 
+                                                        null, null, null, null, parseFloat("0.00" + (parseFloat(this.meanTemperature)+ 10)), null);
+
+        this.sunHarmonograph = new Harmonograph(null, null, null, null, null, null,
+                                                parseFloat("0." + this.globalRadiation), null, parseFloat("0.00" + this.cloudCover),
+                                                parseFloat("0.00" + this.sunshine), null, null, null, null);
+
+        this.rainHarmonograph = new Harmonograph(null, null, null, null, null, parseFloat(this.sunshine), parseFloat("0." + this.cloudCover) * 0.1, parseFloat("0.0" + this.pressure),
+                                                null, null, null, null, parseFloat("0.0" + parseFloat(this.precipitation) * 10), null);
+
+
+        this.temperatureHarmonograph.setCanvas('temperatureHarmonograph');
+        this.sunHarmonograph.setCanvas('sunHarmonograph');
+        this.rainHarmonograph.setCanvas('rainHarmonograph');
 	}
 
+    startDrawing() {
+        this.temperatureHarmonograph.drawControl();
+        this.sunHarmonograph.drawControl();
+        this.rainHarmonograph.drawControl();
+    }
+
+    stopDrawing() {
+        this.temperatureHarmonograph.drawControl();
+        this.sunHarmonograph.drawControl();
+        this.rainHarmonograph.drawControl();
+    }
+
+    clearDrawing() {
+        this.temperatureHarmonograph.output.clear();
+        this.sunHarmonograph.output.clear();
+        this.rainHarmonograph.output.clear();
+    }
+
+    getDate() {
+        return this.date;
+    }
 }
 
+const weathers = [];
+
+let currentDay = '';
+
 function parseText(text) {
-	let lines = text.split('\r\n');
+	let lines = text.split(newlineSeprator);
 	let str = '';
 	for(let i = 1 ; i < lines.length ; i++) {
 		let elements = lines[i].split(',');
 		let weather = new Weather(elements[0], elements[1], elements[2], elements[3], elements[4],
 			elements[5], elements[6], elements[7], elements[8]);
 		
-		str += `<option value="${elements[0]}">${elements[0]}</option>`
+		str += `<option value="${elements[0]}"></option>`
 		weathers.push(weather);
-
-
 	}
 
 	$("#days").html(str);
-
-	$('#days').on('change', function() {
-		for (let i = 0; i < weathers.length; i++) {
-			if (this.value == weathers[i].date) {
-				A = toRadians(parseFloat(weathers[i].maxTemperature));
-				B = toRadians(parseFloat(weathers[i].minTemperature));
-				u = parseFloat("0." + weathers[i].globalRadiation);
-				v = parseFloat("0." + weathers[i].pressure);
-				R = parseFloat("0.00" + weathers[i].cloudCover);
-				S = parseFloat(weathers[i].sunshine) * 0.001;
-				q = parseFloat(700 + parseInt(weathers[i].precipitation));
-			}
-		}
-
-		console.log("A, B, u, v, R, S, q");
-		console.log(A, B, u, v, R, S, q);
-		start();
-	});
 }
 
+$('#daystyped').on('change', function() {
+    for (let i = 0; i < weathers.length; i++) {
+        if (weathers[i].getDate() == this.value) {
+            weathers[i].startDrawing();
+            break;
+        }
+    }
 
+    currentDay = this.value;
+});
 
-var t = 0.0, dt = 0.01;
-var x, y;
-var xs, ys;
-var alpha, beta, gamma;
+$('#drawctrl').on('click', function() {
+    for (let i = 0; i < weathers.length; i++) {
+        if (weathers[i].getDate() == currentDay) {
+            weathers[i].stopDrawing();
+            break;
+        }
+    }
+});
 
-var output;
-var overview, overc;
-var startStop, permalink;
+$('#clear').on('click', function() {
+    for (let i = 0; i < weathers.length; i++) {
+        if (weathers[i].getDate() == currentDay) {
+            weathers[i].clearDrawing();
+            break;
+        }
+    }
+});
 
-var intervalId = null;
-
-function CanvasRenderer(canvas, drawCircle) {
-	this.canvas = canvas;
-	this.context = canvas.getContext('2d');
-	this.drawCircle = drawCircle;
-
-	this.clear();
-}
-
-CanvasRenderer.prototype.clear = function() {
-	var context = this.context;
-	var width = this.canvas.width;
-	var height = this.canvas.height;
-
-	context.setTransform(1, 0, 0, 1, 0, 0);
-	context.clearRect(0, 0, width, height);
-	context.strokeStyle = '#000';
-	context.lineWidth = w;
-	context.lineCap = 'round';
-	context.lineJoin = 'round';
-	
-	if (r) {
-		var scale = Math.min(width * 0.9 / 2.0 / r, height * 0.9 / 2.0 / r);
-		context.setTransform(scale, 0, 0, scale, width / 2.0, height / 2.0);
-		
-		if (this.drawCircle) {
-			context.save();
-			context.beginPath();
-			context.arc(0, 0, r, 0, 2.0 * Math.PI, false);
-			context.stroke();
-			context.restore();
-		}
-	}
-};
-
-CanvasRenderer.prototype.draw = function(xs, ys) {
-	var context = this.context;
-	context.beginPath();
-	context.moveTo(xs[0], ys[0]);
-	var n = xs.length;
-	for (var i = 1; i < n; i++) {
-		context.lineTo(xs[i], ys[i]);
-	}
-	context.stroke();
-};
-
-CanvasRenderer.prototype.save = function() {
-	this.canvas.toBlob(function(blob) {
-		saveAs(blob, 'harmonograph.png');
-	}, 'image/png');
-};
-
-function SvgRenderer(svg, drawSegments, drawBezier, bezierStep) {
-	this.svg = svg;
-	this.path = null;
-	svg.innerHTML = '';
-
-	this.segments = '';
-	if (drawSegments) {
-		svg.innerHTML += '<path id="segments" stroke="#000" stroke-linecap="round" stroke-linejoin="round" fill="none" d=""></path>';
-		this.segments = this.svg.querySelector('#segments');
-	}
-
-	this.bezier = '';
-	if (drawBezier) {
-		svg.innerHTML += '<path id="bezier" stroke="#000" stroke-linecap="round" stroke-linejoin="round" fill="none" d=""></path>';
-		this.bezier = this.svg.querySelector('#bezier');
-	}
-
-	this.bezierStep = bezierStep || 1;
-
-	this.clear();
-}
-
-SvgRenderer.prototype.clear = function() {
-	var svg = this.svg;
-	if (this.segments) {
-		this.segments.setAttribute('d', '');
-		this.segments.setAttribute('stroke-width', w);
-	}
-	if (this.bezier) {
-		this.bezier.setAttribute('d', '');
-		this.bezier.setAttribute('stroke-width', w);
-	}
-
-	if (r) {
-		var width = svg.width.baseVal.value;
-		var height = svg.height.baseVal.value;
-		var scale = Math.min(width * 0.9 / 2.0 / r, height * 0.9 / 2.0 / r);
-		var m = svg.createSVGMatrix().translate(width / 2.0, height / 2.0).scale(scale);
-		var transform = svg.createSVGTransformFromMatrix(m);
-		if (this.segments) {
-			this.segments.transform.baseVal.initialize(transform);
-		}
-		if (this.bezier) {
-			this.bezier.transform.baseVal.initialize(transform);
-		}
-	}
-};
-
-SvgRenderer.prototype.draw = function(xs, ys) {
-	if (this.segments) {
-		this.drawSegments(this.segments, xs, ys);
-	}
-	if (this.bezier) {
-		this.drawBezier(this.bezier, xs, ys);
-	}
-};
-
-function round(x) {
-	return Math.round(x * 1000) / 1000;
-}
-
-SvgRenderer.prototype.drawSegments = function(path, xs, ys) {
-	var data = [path.getAttribute('d'), 'M'];
-	var i = 0;
-	data.push(round(xs[0]));
-	data.push(round(ys[0]));
-	var n = xs.length;
-	if (n > 1) {
-		data.push('L');
-	}
-	for (var i = 1; i < n; i++) {
-		data.push(round(xs[i]));
-		data.push(round(ys[i]));
-	}
-	path.setAttribute('d', data.join(' '));
-};
-
-SvgRenderer.prototype.drawBezier = function(path, xs, ys) {
-	var n = xs.length;
-	var step = Math.min(this.bezierStep, n - 1);
-	var factor = 0.5 * step / 3;
-	var rxs = [];
-	var rys = [];
-	var cxs = [];
-	var cys = [];
-	for (var i = 0; i < n; i += step) {
-		var prev = Math.max(0, i - 1);
-		var next = Math.min(n - 1, i + 1);
-		rxs.push(xs[i]);
-		rys.push(ys[i]);
-		cxs.push(factor * (xs[next] - xs[prev]));
-		cys.push(factor * (ys[next] - ys[prev]));
-	}
-	var rn = rxs.length;
-
-	var data = [
-		path.getAttribute('d'),
-		'M',
-		round(rxs[0]), round(rys[0]),
-		'C',
-		round(rxs[0] + cxs[0]), round(rys[0] + cys[0]) + ',',
-		round(rxs[1] - cxs[1]), round(rys[1] - cys[1]) + ',',
-		round(rxs[1]), round(rys[1])
-	];
-	if (rn > 2) {
-		data.push('S');
-		for (var i = 2; i < rn; i++) {
-			data.push(round(rxs[i] - cxs[i]));
-			data.push(round(rys[i] - cys[i]) + ',');
-			data.push(round(rxs[i]));
-			data.push(round(rys[i]));
-		}
-	}
-	path.setAttribute('d', data.join(' '));
-};
-
-SvgRenderer.prototype.save = function() {
-	var blob = new Blob([this.svg.outerHTML], {type: 'application/svg+xml'});
-	saveAs(blob, 'harmonograph.svg');
-}
-
-function init() {
-	startStop = document.getElementById('startstop');
-	permalink = document.getElementById('permalink');
-	output = new CanvasRenderer(document.getElementById('output'), true);
-	overview = document.getElementById('overview');
-	overc = overview.getContext('2d');
-
-	fromPermalink();
-	readInput();
-	toPermalink();
-	clear();
-}
-
-function clear() {
-	t = 0.0;
-	updateXY();
-	xs = [x];
-	ys = [y];
-
-	output.clear();
-	drawOverview(true);
-}
-
-function start() {
-	if (intervalId == null) {
-		intervalId = window.setInterval(step, 1000 * dt);
-		
-		startStop.innerHTML = 'Stop';
-		startStop.onclick = stop;
-		enableInput(false);
-	}
-}
-
-function stop() {
-	if (intervalId != null) {
-		window.clearInterval(intervalId);
-		intervalId = null;
-		
-		startStop.innerHTML = 'Start';
-		startStop.onclick = start;
-		enableInput(true);
-	}
-}
-
-function reset() {
-	stop();
-	clear();
-}
-
-function step() {
-	var newXs = [xs[xs.length - 1]];
-	var newYs = [ys[ys.length - 1]];
-	for (var i = 0; i < s; ++i) {
-		t += dt;
-		updateXY();
-		xs.push(x);
-		ys.push(y);
-		newXs.push(x);
-		newYs.push(y);
-	}
-
-	output.draw(newXs, newYs);
-	drawOverview(false);
-}
-
-function inputChange() {
-	readInput();
-	clear();
-	drawOverview(true);
-	toPermalink();
-}
-
-function sChange() {
-	s = read('s');
-}
-
-function enableInput(enabled) {
-	var form = document.getElementById('input');
-	var inputs = form.getElementsByTagName('input');
-	for (var i = 0; i < inputs.length; i++) {
-		var input = inputs[i];
-		input.disabled = !enabled;
-	}
-}
-
-function updateXY() {
-
-	alpha = A * Math.sin(2.0 * Math.PI * (f * t + u)) * Math.exp(-R * t);
-	beta  = B * Math.sin(2.0 * Math.PI * (g * t + v)) * Math.exp(-S * t);
-	gamma = 2.0 * Math.PI * h * t;
-	
-	var xa = p * Math.cos(alpha) + q * Math.sin(alpha) - d;
-	var ya = q * Math.cos(alpha) - p * Math.sin(alpha);
-	var xb = xa * Math.cos(beta) - ya * Math.sin(beta);
-	var yb = ya * Math.cos(beta) + xa * Math.sin(beta) - c;
-	x = xb * Math.cos(gamma) - yb * Math.sin(gamma);
-	y = yb * Math.cos(gamma) + xb * Math.sin(gamma);
-}
-
-function read(id) {
-	var input = document.getElementById(id);
-	var value = input.value;
-	var f = parseFloat(value);
-	if (isNaN(f)) {
-		input.className = 'error';
-	} else {
-		input.className = '';
-	}
-	return f;
-}
-
-function readInput() {
-	d = read('d');
-	c = read('c');
-	p = read('p');
-	q = read('q');
-	r = read('r');
-	A = toRadians(read('A'));
-	B = toRadians(read('B'));
-	u = read('u');
-	v = read('v');
-	R = read('R');
-	S = read('S');
-	f = read('f');
-	g = read('g');
-	h = read('h');
-	s = read('s');
-	w = read('w');
-}
-
-function drawOverview(variables) {
-	overc.setTransform(1, 0, 0, 1, 0, 0);
-	overc.clearRect(0, 0, overview.width, overview.height);
-	
-	var scale = overview.width * 0.6 / d;
-	overc.setTransform(scale, 0, 0, scale, overview.width * 0.2, overview.width * 0.2);
-	
-	overc.lineWidth = 5;
-	overc.strokeStyle = '#000';
-	overc.fillStyle = '#000';
-	overc.font = 'italic 80px sans-serif';
-	overc.textBaseline = 'bottom';
-
-	// top bar
-	overc.beginPath();
-	overc.moveTo(0, 0);
-	overc.lineTo(d, 0);
-	overc.stroke();
-	if (variables) {
-		overc.textAlign = 'center';
-		overc.fillText('d', 0.5 * d, 0);
-	}
-	
-	// right pendulum
-	overc.save();
-	{
-		overc.translate(d, 0);
-		overc.rotate(-beta);
-		
-		overc.beginPath();
-		overc.moveTo(0, 0);
-		overc.lineTo(0, 1.8 * c);
-		overc.stroke();
-		
-		overc.beginPath();
-		overc.arc(0, 2.0 * c, 0.2 * c, 0, 2.0 * Math.PI, true);
-		overc.stroke();
-		
-		// paper
-		overc.save();
-		{
-			overc.translate(0, c);
-			overc.rotate(-gamma);
-			
-			overc.fillStyle = '#fff';
-			overc.beginPath();
-			overc.arc(0, 0, r, 0, 2.0 * Math.PI, false);
-			overc.fill();
-			
-			overc.beginPath();
-			overc.arc(0, 0, r, 0, 2.0 * Math.PI, false);
-			overc.stroke();
-			
-			overc.beginPath();
-			overc.moveTo(0.8 * r, 0);
-			overc.lineTo(-0.8 * r, 0);
-			overc.moveTo(0, 0.8 * r);
-			overc.lineTo(0, -0.8 * r);
-			overc.moveTo(-0.1 * r, -0.6 * r);
-			overc.lineTo(0, -0.8 * r);
-			overc.lineTo(0.1 * r, -0.6 * r);
-			overc.stroke();
-			
-			if (variables) {
-				overc.textAlign = 'center';
-				overc.fillStyle = '#000';
-				overc.fillText('r', 0.5 * r, 0);
-			}
-		}
-		overc.restore();
-		
-		if (variables) {
-			overc.textAlign = 'left';
-			overc.fillText(' c', 0, 0.5 * c);
-		}
-	}
-	overc.restore();
-	
-	// left pendulum
-	overc.save();
-	{
-		overc.rotate(-alpha);
-		
-		overc.beginPath();
-		overc.moveTo(0, 0);
-		overc.lineTo(0, 1.8 * c);
-		overc.moveTo(0, q);
-		overc.lineTo(p, q);
-		overc.stroke();
-		
-		overc.beginPath();
-		overc.arc(0, 2.0 * c, 0.2 * c, 0, 2.0 * Math.PI, false);
-		overc.stroke();
-		
-		overc.beginPath();
-		overc.arc(p, q, 10.0, 0, 2.0 * Math.PI, false);
-		overc.fill();
-		
-		if (variables) {
-			overc.textAlign = 'center';
-			overc.fillText('p', 0.5 * p, q);
-			overc.textAlign = 'left';
-			overc.fillText(' q', 0, 0.5 * q);
-		}
-	}
-	overc.restore();
-}
-
-function savePng() {
-	var res = read('res');
-	var png = document.createElement('canvas');
-	png.width = res;
-	png.height = res;
-	var renderer = new CanvasRenderer(png, false);
-	renderer.draw(xs, ys);
-	renderer.save();
-}
-
-function saveSvg() {
-	var res = read('res');
-	var ns = 'http://www.w3.org/2000/svg';
-	var svg = document.createElementNS(ns, 'svg');
-	svg.setAttribute('xmlns', ns);
-	svg.setAttribute('width', res);
-	svg.setAttribute('height', res);
-	svg.setAttribute('version', '1.1');
-	var bezier = document.getElementById('bezier').checked;
-	var renderer = new SvgRenderer(svg, !bezier, bezier, read('bezier-step'));
-	renderer.draw(xs, ys);
-	renderer.save();
-}
-
-function fromPermalink() {
-	var link = document.location.hash;
-	var values = link.substring(1).split('&');
-	for (var i in values) {
-		var s = values[i].split('=', 2);
-		if (s.length == 2) {
-			var input = document.getElementById(s[0]);
-			if (input) {
-				input.value = s[1];
-			}
-		}
-	}
-}
-
-function toPermalink() {
-	var link = '#';
-	var form = document.getElementById('input');
-	var inputs = form.getElementsByTagName('input');
-	for (var i in inputs) {
-		var input = inputs[i];
-		if (input.id) {
-			link += input.id + '=' + input.value + '&';
-		}
-	}
-	permalink.href = link;
-}
+fetch('data.csv')
+  .then(response => response.text())
+  .then(text => parseText(text));
