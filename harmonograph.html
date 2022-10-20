@@ -9,20 +9,30 @@
 </head>
 
 <body>
-	<h1>Harmonograph in JavaScript</h1>
+	<div class="title-entry">
+        <img  src="title.png" alt="title" height="251px" width="693px">
+    </div>
+    <div class="break-line"></div>
+    <div class="btn-panel">
+        <button style="margin-right: 47px;" id="drawctrl" class="custom-btn">Start/Stop</button>
+        <button class="custom-btn" id="clear">Clear</button>
+    </div>
     <div class="container">
         <div class="row">
             <div class="col">
+                <p align="center">Temperature</p>  
                 <canvas id="temperatureHarmonograph" class="output main" width="320" height="320"></canvas>
-                <p>Temperature</p>
+                
             </div>
             <div class="col">
+                <p align="center">Sun</p>
                 <canvas id="sunHarmonograph" class="output main" width="320" height="320"></canvas>
-                <p>Sun</p>
+                
             </div>
             <div class="col">
+                <p align="center">Rain</p>
                 <canvas id="rainHarmonograph" class="output main" width="320" height="320"></canvas>
-                <p>Rain</p>
+                
             </div>
           </div>
     </div>
@@ -31,9 +41,9 @@
     
     <div class="container">
         <div class="row">
-            <div class="mb-3">
-                <label for="exampleFormControlTextarea1" class="form-label">Year Month Date</label>
-                <select  class="form-select" aria-label="Default select example" name="weather_days" id="days"></select>
+            <div class="d-flex justify-content-center">
+                <input style="text-align: center; color: #f5f5f5;" class="input-days" list="days" id="daystyped" placeholder="YYYYMMDD">
+                <datalist style="display:none;" class="form-select" aria-label="Default select example" name="weather_days" id="days"></datalist>
             </div>
         </div>
     </div>

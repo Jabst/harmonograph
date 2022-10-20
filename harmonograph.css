@@ -1,7 +1,8 @@
 body {
 	margin: 0px;
-	font-family: sans-serif;
-	background-color: rgb(218, 218, 218);
+	font-family: 'Courier Prime';
+	background-color: #FFFBEC;
+	color: #0500FF;
 }
 
 th {
@@ -13,18 +14,13 @@ td.main {
 	padding: 20px;
 }
 
-h1 {
-	margin: 0em 0em;
-	padding: 0.2em;
-	background-color: rgb(87, 187, 108);
-}
 
 .right {
 	float: right;
 }
 
 p {
-	margin-right: 20px;
+
 }
 
 .center {
@@ -32,8 +28,11 @@ p {
 }
 
 .output {
-	background-color: #fff;
-	border: 2px solid #ffa;
+	padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
 }
 
 .output.main,
@@ -82,4 +81,74 @@ button#startstop {
 button#reset {
 	width: 6em;
 	height: 3em;
+}
+
+.title-entry {
+	height: 193.51px;
+    left: 411px;
+    top: 25px;
+    margin-bottom: 78px;
+    padding-left: 32%;
+    margin-top: 4px;
+}
+
+.break-line {
+	border: 1.6px solid #0500FF;
+	margin-bottom: 31px;
+}
+
+.custom-btn {
+	box-sizing: border-box;
+
+	border: 1.5px solid #0500FF;
+	border-radius: 15px;
+
+	background-color: transparent;
+
+	padding-left: 8em;
+    padding-right: 8em;
+
+	color: #0500FF;
+}
+
+.custom-btn:hover {
+	color: #F5F5F5;
+	background-color: #0500FF;
+  }
+
+.btn-panel {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 27px;
+}
+
+.input-days {
+	background: #0500FF;
+	background-color: #0500FF;
+	border-radius: 30px;
+	border:1.5px solid #0500FF;
+
+	padding: 8px 65px;
+	margin-bottom:2em;
+}
+
+input[type="text"], textarea {
+
+	background-color : #0500FF;
+	color: #f5f5f5;
+  
+  }
+
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+	color: #f5f5f5;
+	opacity: 1; /* Firefox */
+}
+
+::-webkit-input-placeholder {
+text-align: center;
+}
+
+:-moz-placeholder {
+text-align: center;
 }

@@ -21,7 +21,7 @@ class CanvasRenderer{
     
         context.setTransform(1, 0, 0, 1, 0, 0);
         context.clearRect(0, 0, width, height);
-        context.strokeStyle = '#000';
+        context.strokeStyle = '#0500FF';
         context.lineWidth = this.w;
         context.lineCap = 'round';
         context.lineJoin = 'round';
@@ -34,7 +34,10 @@ class CanvasRenderer{
                 context.save();
                 context.beginPath();
                 context.arc(0, 0, this.r, 0, 2.0 * Math.PI, false);
+                
+                context.lineWidth = 2;
                 context.stroke();
+                context.lineWidth = this.w;
                 context.restore();
             }
         }
@@ -86,6 +89,8 @@ class Harmonograph {
         this.self = this;
 
         this.dx = new Date();
+
+        this.intervalId = null;
     }
 
     setCanvas(id) {
@@ -131,13 +136,21 @@ class Harmonograph {
     }
 
     start() {
-        this.intervalId = window.setInterval(() => {this.step()}, 1000 * this.dt);    
+        this.intervalId = window.setInterval(() => {this.step()}, 1000 * this.dt);
     }
 
     stop() {
-        console.log("stopped");
         window.clearInterval(intervalId);
 		this.intervalId = null;
+    }
+
+    drawControl() {
+        if (this.intervalId == null) {
+            this.intervalId = window.setInterval(() => {this.step()}, 1000 * this.dt);
+        } else {
+            window.clearInterval(this.intervalId);
+		    this.intervalId = null;
+        }
     }
 }
 
@@ -168,8 +181,6 @@ class Weather {
                                                         this.maxTemperature, this.minTemperature, null, null, 
                                                         null, null, null, null, parseFloat("0.00" + (parseFloat(this.meanTemperature)+ 10)), null);
 
-                                                        console.log(this.temperatureHarmonograph)
-
         this.sunHarmonograph = new Harmonograph(null, null, null, null, null, null,
                                                 parseFloat("0." + this.globalRadiation), null, parseFloat("0.00" + this.cloudCover),
                                                 parseFloat("0.00" + this.sunshine), null, null, null, null);
@@ -184,9 +195,21 @@ class Weather {
 	}
 
     startDrawing() {
-        this.temperatureHarmonograph.start();
-        this.sunHarmonograph.start();
-        this.rainHarmonograph.start();
+        this.temperatureHarmonograph.drawControl();
+        this.sunHarmonograph.drawControl();
+        this.rainHarmonograph.drawControl();
+    }
+
+    stopDrawing() {
+        this.temperatureHarmonograph.drawControl();
+        this.sunHarmonograph.drawControl();
+        this.rainHarmonograph.drawControl();
+    }
+
+    clearDrawing() {
+        this.temperatureHarmonograph.output.clear();
+        this.sunHarmonograph.output.clear();
+        this.rainHarmonograph.output.clear();
     }
 
     getDate() {
@@ -196,6 +219,8 @@ class Weather {
 
 const weathers = [];
 
+let currentDay = '';
+
 function parseText(text) {
 	let lines = text.split('\r\n');
 	let str = '';
@@ -204,17 +229,37 @@ function parseText(text) {
 		let weather = new Weather(elements[0], elements[1], elements[2], elements[3], elements[4],
 			elements[5], elements[6], elements[7], elements[8]);
 		
-		str += `<option value="${elements[0]}">${elements[0]}</option>`
+		str += `<option value="${elements[0]}"></option>`
 		weathers.push(weather);
 	}
 
 	$("#days").html(str);
 }
 
-$('#days').on('change', function() {
+$('#daystyped').on('change', function() {
     for (let i = 0; i < weathers.length; i++) {
         if (weathers[i].getDate() == this.value) {
             weathers[i].startDrawing();
+            break;
+        }
+    }
+
+    currentDay = this.value;
+});
+
+$('#drawctrl').on('click', function() {
+    for (let i = 0; i < weathers.length; i++) {
+        if (weathers[i].getDate() == currentDay) {
+            weathers[i].stopDrawing();
+            break;
+        }
+    }
+});
+
+$('#clear').on('click', function() {
+    for (let i = 0; i < weathers.length; i++) {
+        if (weathers[i].getDate() == currentDay) {
+            weathers[i].clearDrawing();
             break;
         }
     }
