@@ -141,7 +141,10 @@ class Harmonograph {
     }
 
     stop() {
-        window.clearInterval(intervalId);
+        if (!this.intervalId) {
+            return;
+        }
+        window.clearInterval(this.intervalId);
 		this.intervalId = null;
     }
 
@@ -178,11 +181,12 @@ class Weather {
 		this.precipitation = precipitation;
 		this.pressure = pressure;
 
+        let helper = this.getParameters(this.sunshine);
         this.temperatureHarmonograph = new Harmonograph(null, null, null, null, 
                                                         this.maxTemperature, this.minTemperature, null, null, 
                                                         null, null, null, null, parseFloat("0.00" + (parseFloat(this.meanTemperature)+ 10)), null);
 
-        this.sunHarmonograph = new Harmonograph(null, null, null, null, null, null,
+        this.sunHarmonograph = new Harmonograph(null, helper.paperposition, null, null, helper.amplitude, helper.amplitude,
                                                 parseFloat("0." + this.globalRadiation), null, parseFloat("0.00" + this.cloudCover),
                                                 parseFloat("0.00" + this.sunshine), null, null, null, null);
 
@@ -195,22 +199,42 @@ class Weather {
         this.rainHarmonograph.setCanvas('rainHarmonograph');
 	}
 
+    getParameters(sunshine) {
+        
+        let sunshineFactored = Math.floor(parseFloat(sunshine)) * 25;
+
+        let offset = Math.abs( (8*25) - sunshineFactored);
+
+        let percentage = offset / (16 * 25);
+
+        return {
+            amplitude: 10 - (percentage * 10),
+            paperposition: 480 + sunshineFactored,
+        }
+    }
+
     startDrawing() {
-        this.temperatureHarmonograph.drawControl();
-        this.sunHarmonograph.drawControl();
-        this.rainHarmonograph.drawControl();
+        this.temperatureHarmonograph.start();
+        this.sunHarmonograph.start();
+        this.rainHarmonograph.start();
     }
 
     stopDrawing() {
-        this.temperatureHarmonograph.drawControl();
-        this.sunHarmonograph.drawControl();
-        this.rainHarmonograph.drawControl();
+        this.temperatureHarmonograph.stop();
+        this.sunHarmonograph.stop();
+        this.rainHarmonograph.stop();
     }
 
     clearDrawing() {
         this.temperatureHarmonograph.output.clear();
         this.sunHarmonograph.output.clear();
         this.rainHarmonograph.output.clear();
+    }
+
+    isDrawing() {
+        return this.temperatureHarmonograph.intervalId &&
+                this.sunHarmonograph.intervalId &&
+                this.rainHarmonograph.intervalId;
     }
 
     getDate() {
@@ -238,6 +262,10 @@ function parseText(text) {
 }
 
 $('#daystyped').on('change', function() {
+
+    stopDrawing();
+    clearDrawing();
+
     for (let i = 0; i < weathers.length; i++) {
         if (weathers[i].getDate() == this.value) {
             weathers[i].startDrawing();
@@ -251,7 +279,12 @@ $('#daystyped').on('change', function() {
 $('#drawctrl').on('click', function() {
     for (let i = 0; i < weathers.length; i++) {
         if (weathers[i].getDate() == currentDay) {
-            weathers[i].stopDrawing();
+            if (weathers[i].isDrawing()){
+                weathers[i].stopDrawing();
+            } else {
+                weathers[i].startDrawing();
+            }
+            
             break;
         }
     }
@@ -265,6 +298,18 @@ $('#clear').on('click', function() {
         }
     }
 });
+
+function stopDrawing() {
+    for (let i = 0 ; i < weathers.length; i++) {
+        weathers[i].stopDrawing();
+    }
+}
+
+function clearDrawing() {
+    for (let i = 0 ; i < weathers.length; i++) {
+        weathers[i].clearDrawing();
+    }
+}
 
 fetch('data.csv')
   .then(response => response.text())

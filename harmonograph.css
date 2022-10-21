@@ -86,11 +86,11 @@ button#reset {
 
 .title-entry {
 	height: 193.51px;
-    left: 411px;
     top: 25px;
     margin-bottom: 78px;
-    padding-left: 32%;
     margin-top: 4px;
+
+	display:flex;
 }
 
 .break-line {
@@ -117,6 +117,13 @@ button#reset {
 
 }
 
+
+.center {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+  }
+
 .custom-btn:hover {
 	color: #F5F5F5;
 	background-color: #0500FF;
@@ -134,7 +141,7 @@ button#reset {
 .input-days {
 	background: #0500FF;
 	background-color: #0500FF;
-	border-radius: 30px;
+	border-radius: 18px;
 	border:1.5px solid #0500FF;
 
 	padding: 8px 65px;
