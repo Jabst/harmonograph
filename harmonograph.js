@@ -98,6 +98,16 @@ class Harmonograph {
         this.output = new CanvasRenderer(document.getElementById(id), true);
     }
 
+    reset() {
+        this.xs = [];
+        this.ys = [];
+
+        this.t = 0.0;
+        this.dt = 0.1;
+
+        this.dx = new Date();
+    }
+
     step() {
         var newXs = [this.xs[this.xs.length - 1]];
         var newYs = [this.ys[this.ys.length - 1]];
@@ -229,6 +239,14 @@ class Weather {
         this.temperatureHarmonograph.output.clear();
         this.sunHarmonograph.output.clear();
         this.rainHarmonograph.output.clear();
+
+        this.resetDrawing();
+    }
+
+    resetDrawing() {
+        this.temperatureHarmonograph.reset();
+        this.sunHarmonograph.reset();
+        this.rainHarmonograph.reset();
     }
 
     isDrawing() {
@@ -277,15 +295,17 @@ $('#daystyped').on('change', function() {
 });
 
 $('#drawctrl').on('click', function() {
-    for (let i = 0; i < weathers.length; i++) {
-        if (weathers[i].getDate() == currentDay) {
-            if (weathers[i].isDrawing()){
-                weathers[i].stopDrawing();
-            } else {
-                weathers[i].startDrawing();
+    if (currentDay != '') {
+        for (let i = 0; i < weathers.length; i++) {
+            if (weathers[i].getDate() === currentDay) {
+                if (weathers[i].isDrawing()){
+                    weathers[i].stopDrawing();
+                } else {
+                    weathers[i].startDrawing();
+                }
+                
+                break;
             }
-            
-            break;
         }
     }
 });
